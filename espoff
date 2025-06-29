@@ -1,0 +1,5 @@
+for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+    if player.Character and player.Character:FindFirstChild("ESP_Highlight") then
+        player.Character.ESP_Highlight:Destroy()
+    end
+end
