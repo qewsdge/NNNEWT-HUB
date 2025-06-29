@@ -1,9 +1,47 @@
-for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-    if player.Character then
-        for _, child in pairs(player.Character:GetChildren()) do
-            if child:IsA("Highlight") then
-                child:Destroy()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Включает подсветку
+local function enableESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local char = player.Character
+            if not char:FindFirstChild("ESP_Highlight") then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "ESP_Highlight"
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                highlight.Adornee = char
+                highlight.Parent = char
             end
         end
     end
 end
+
+-- Удаляет подсветку
+local function disableESP()
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character then
+            local esp = player.Character:FindFirstChild("ESP_Highlight")
+            if esp then
+                esp:Destroy()
+            end
+        end
+    end
+end
+
+-- Тоггл в Rayfield:
+Tab:CreateToggle({
+    Name = "ESP",
+    CurrentValue = false,
+    Flag = "ESP_Toggle",
+    Callback = function(state)
+        if state then
+            enableESP()
+        else
+            disableESP()
+        end
+    end
+})
