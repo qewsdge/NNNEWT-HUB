@@ -1,0 +1,1144 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "NNNEWT Hub",
+   Icon = 0,
+   LoadingTitle = "NNNEWT Hub Script",
+   LoadingSubtitle = "by NNNEWT",
+   ShowText = "Rayfield",
+   Theme = "Default",
+   ToggleUIKeybind = "K",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Big Hub"
+   },
+   Discord = {
+      Enabled = false
+   },
+   KeySystem = false
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+
+local tabESP = Window:CreateTab("ESP") -- твоя вкладка
+
+-- Highlight setup
+local espEnabled = false
+local fillColor = Color3.fromRGB(255, 255, 255)
+local outlineColor = Color3.fromRGB(0, 0, 0)
+local highlights = {}
+
+local function createHighlight(player)
+    if player == LocalPlayer then return end
+    local character = player.Character
+    if not character then return end
+    if highlights[player] then return end
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "ESP_Highlight"
+    highlight.Adornee = character
+    highlight.FillColor = fillColor
+    highlight.OutlineColor = outlineColor
+    highlight.Parent = character
+
+    highlights[player] = highlight
+end
+
+local function updateHighlightsColors()
+    for player, highlight in pairs(highlights) do
+        if highlight and highlight.Parent then
+            highlight.FillColor = fillColor
+            highlight.OutlineColor = outlineColor
+        else
+            highlights[player] = nil
+        end
+    end
+end
+
+local function removeHighlight(player)
+    if highlights[player] then
+        highlights[player]:Destroy()
+        highlights[player] = nil
+    end
+end
+
+local function enableESP()
+    espEnabled = true
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            createHighlight(player)
+        end
+        player.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if espEnabled then
+                createHighlight(player)
+                updateHighlightsColors()
+            end
+        end)
+        player.CharacterRemoving:Connect(function()
+            removeHighlight(player)
+        end)
+    end
+end
+
+local function disableESP()
+    espEnabled = false
+    for player, highlight in pairs(highlights) do
+        if highlight then
+            highlight:Destroy()
+        end
+    end
+    highlights = {}
+end
+
+tabESP:CreateSection("Highlight")
+
+tabESP:CreateToggle({
+    Name = "Highlight",
+    CurrentValue = false,
+    Flag = "ToggleESP",
+    Callback = function(state)
+        if state then
+            enableESP()
+        else
+            disableESP()
+        end
+    end
+})
+
+tabESP:CreateColorPicker({
+    Name = "Highlight Fill Color",
+    Color = fillColor,
+    Flag = "ESPFillColorFlag",
+    Callback = function(color)
+        fillColor = color
+        updateHighlightsColors()
+    end
+})
+
+tabESP:CreateColorPicker({
+    Name = "Highlight Outline Color",
+    Color = outlineColor,
+    Flag = "ESPOutlineColorFlag",
+    Callback = function(color)
+        outlineColor = color
+        updateHighlightsColors()
+    end
+})
+
+-- Nicknames setup
+local nameTags = {}
+local nicknamesEnabled = false
+local nicknameColor = Color3.new(1, 1, 1)
+local nicknameTextSize = 18
+
+local function createNameTag(player)
+    if player == LocalPlayer then return end
+    local character = player.Character
+    if not character then return end
+    if nameTags[player] then return end
+
+    local head = character:FindFirstChild("Head")
+    if not head then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "NameTag"
+    billboard.Adornee = head
+    billboard.Size = UDim2.new(0, 120, 0, 30)
+    billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+    billboard.AlwaysOnTop = true
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = billboard
+    textLabel.BackgroundTransparency = 1
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = nicknameTextSize
+    textLabel.TextColor3 = nicknameColor
+    textLabel.TextStrokeColor3 = Color3.new(0, 0, 0)
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Text = player.Name
+    textLabel.TextScaled = false
+
+    billboard.Parent = head
+    nameTags[player] = billboard
+end
+
+local function updateNameTagsColor()
+    for player, billboard in pairs(nameTags) do
+        if billboard and billboard.Parent then
+            local textLabel = billboard:FindFirstChildOfClass("TextLabel")
+            if textLabel then
+                textLabel.TextColor3 = nicknameColor
+            end
+        else
+            nameTags[player] = nil
+        end
+    end
+end
+
+local function updateNameTagsTextSize()
+    for player, billboard in pairs(nameTags) do
+        if billboard and billboard.Parent then
+            local textLabel = billboard:FindFirstChildOfClass("TextLabel")
+            if textLabel then
+                textLabel.TextSize = nicknameTextSize
+            end
+        else
+            nameTags[player] = nil
+        end
+    end
+end
+
+local function removeNameTag(player)
+    if nameTags[player] then
+        nameTags[player]:Destroy()
+        nameTags[player] = nil
+    end
+end
+
+local function enableNameTags()
+    nicknamesEnabled = true
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            createNameTag(player)
+        end
+        player.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if nicknamesEnabled then
+                createNameTag(player)
+            end
+        end)
+        player.CharacterRemoving:Connect(function()
+            removeNameTag(player)
+        end)
+    end
+end
+
+local function disableNameTags()
+    nicknamesEnabled = false
+    for player, billboard in pairs(nameTags) do
+        if billboard then
+            billboard:Destroy()
+        end
+    end
+    nameTags = {}
+end
+
+tabESP:CreateSection("Nicknames")
+
+tabESP:CreateToggle({
+    Name = "Show Nicknames",
+    CurrentValue = false,
+    Flag = "ToggleNicknames",
+    Callback = function(state)
+        if state then
+            enableNameTags()
+        else
+            disableNameTags()
+        end
+    end
+})
+
+tabESP:CreateColorPicker({
+    Name = "Nickname Text Color",
+    Color = nicknameColor,
+    Flag = "NicknameColorFlag",
+    Callback = function(color)
+        nicknameColor = color
+        updateNameTagsColor()
+    end
+})
+
+tabESP:CreateSlider({
+    Name = "Nickname Text Size",
+    Range = {10, 40},
+    Increment = 1,
+    Suffix = " px",
+    CurrentValue = nicknameTextSize,
+    Flag = "NicknameTextSizeFlag",
+    Callback = function(value)
+        nicknameTextSize = value
+        updateNameTagsTextSize()
+    end
+})
+
+-- HP Bars setup
+local hpBars = {}
+local hpBarsEnabled = false
+
+local WIDTH = 3          -- общая ширина BillboardGui (обводка + полоска)
+local INNER_WIDTH = 1    -- ширина полоски внутри
+local MIN_HEIGHT = 30    -- минимальная высота полоски (вдалеке)
+local MAX_HEIGHT =  120   -- максимальная высота полоски (вблизи)
+local MIN_DISTANCE = 60
+local MAX_DISTANCE = 120
+
+local function updateHPBarSize(barGui, hpBar, borderFrame, adorneePos)
+    local camPos = workspace.CurrentCamera.CFrame.Position
+    local dist = (camPos - adorneePos).Magnitude
+    local t = math.clamp((dist - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE), 0, 1)
+    
+    local height = math.floor(MAX_HEIGHT * (1 - t) + MIN_HEIGHT * t)
+    barGui.Size = UDim2.new(0, WIDTH, 0, height)
+
+    borderFrame.Size = UDim2.new(1, 0, 1, 0)
+end
+
+local function createHPBar(player)
+    if player == LocalPlayer then return end
+    local character = player.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not rootPart then return end
+
+    local barGui = Instance.new("BillboardGui")
+    barGui.Name = "HPBar"
+    barGui.Adornee = rootPart
+    barGui.Size = UDim2.new(0, WIDTH, 0, MAX_HEIGHT)
+    barGui.StudsOffset = Vector3.new(2, 0, 0)
+    barGui.AlwaysOnTop = true
+    barGui.LightInfluence = 0
+    barGui.MaxDistance = 1000
+
+    -- Обводка (рамка)
+    local borderFrame = Instance.new("Frame")
+    borderFrame.Size = UDim2.new(1, 0, 1, 0)
+    borderFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+    borderFrame.BorderSizePixel = 0
+    borderFrame.Parent = barGui
+
+    -- Внутренний прозрачный фрейм для отступа от рамки
+    local innerFrame = Instance.new("Frame")
+    innerFrame.Size = UDim2.new(1, -2, 1, -2) -- отступ 1 пиксель с каждой стороны
+    innerFrame.Position = UDim2.new(0, 1, 0, 1)
+    innerFrame.BackgroundTransparency = 1
+    innerFrame.Parent = borderFrame
+
+    -- Полоска здоровья
+    local hpBar = Instance.new("Frame")
+    hpBar.Name = "HP"
+    hpBar.AnchorPoint = Vector2.new(0.5, 1)
+    hpBar.Position = UDim2.new(0.5, 0, 1, 0)
+    hpBar.Size = UDim2.new(0, INNER_WIDTH, 1, 0)
+    hpBar.BackgroundColor3 = Color3.fromRGB(160, 255, 160)
+    hpBar.BorderSizePixel = 0
+    hpBar.Parent = innerFrame
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = 90
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 255, 160)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 50, 50))
+    }
+    gradient.Parent = hpBar
+
+    barGui.Parent = rootPart
+
+    local function updateHealth()
+        if humanoid.Health > 0 and humanoid.MaxHealth > 0 then
+            local ratio = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+            hpBar.Size = UDim2.new(0, INNER_WIDTH, ratio, 0)
+        else
+            hpBar.Size = UDim2.new(0, INNER_WIDTH, 0, 0)
+        end
+    end
+
+    updateHealth()
+
+    local healthConn = humanoid.HealthChanged:Connect(updateHealth)
+
+    local renderConn
+    renderConn = RunService.RenderStepped:Connect(function()
+        if barGui and barGui.Parent and rootPart and rootPart.Parent then
+            updateHPBarSize(barGui, hpBar, borderFrame, rootPart.Position)
+        else
+            if renderConn then renderConn:Disconnect() end
+        end
+    end)
+
+    hpBars[player] = {
+        Gui = barGui,
+        HealthConnection = healthConn,
+        RenderConnection = renderConn,
+        HPFrame = hpBar
+    }
+end
+
+local function removeHPBar(player)
+    if hpBars[player] then
+        if hpBars[player].HealthConnection then
+            hpBars[player].HealthConnection:Disconnect()
+        end
+        if hpBars[player].RenderConnection then
+            hpBars[player].RenderConnection:Disconnect()
+        end
+        if hpBars[player].Gui then
+            hpBars[player].Gui:Destroy()
+        end
+        hpBars[player] = nil
+    end
+end
+
+local function enableHPBars()
+    hpBarsEnabled = true
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Character then
+            createHPBar(player)
+        end
+        player.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if hpBarsEnabled then
+                createHPBar(player)
+            end
+        end)
+        player.CharacterRemoving:Connect(function()
+            removeHPBar(player)
+        end)
+    end
+end
+
+local function disableHPBars()
+    hpBarsEnabled = false
+    for player, data in pairs(hpBars) do
+        if data.HealthConnection then
+            data.HealthConnection:Disconnect()
+        end
+        if data.RenderConnection then
+            data.RenderConnection:Disconnect()
+        end
+        if data.Gui then
+            data.Gui:Destroy()
+        end
+    end
+    hpBars = {}
+end
+
+tabESP:CreateSection("HP Bars")
+
+tabESP:CreateToggle({
+    Name = "Enable HP Bars",
+    CurrentValue = false,
+    Flag = "ToggleHPBars",
+    Callback = function(state)
+        if state then
+            enableHPBars()
+        else
+            disableHPBars()
+        end
+    end
+})
+
+-- Вкладка Visual (fullbright, nofog, time cycle, fov и т.п.)
+local tabVisual = Window:CreateTab("Visual")
+
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
+
+tabVisual:CreateSection("Fullbright")
+
+local fullbrightEnabled = false
+local currentBrightness = 1
+
+local originalLightingSettings = {
+    Brightness = Lighting.Brightness,
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    ClockTime = Lighting.ClockTime,
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    FogColor = Lighting.FogColor,
+}
+
+local function applyFullbright()
+    Lighting.Brightness = currentBrightness
+    Lighting.Ambient = Color3.new(1, 1, 1)
+    Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    Lighting.FogStart = 0
+    Lighting.FogEnd = 1e10
+    Lighting.FogColor = Color3.new(1, 1, 1)
+end
+
+local function restoreLighting()
+    Lighting.Brightness = originalLightingSettings.Brightness
+    Lighting.Ambient = originalLightingSettings.Ambient
+    Lighting.OutdoorAmbient = originalLightingSettings.OutdoorAmbient
+    Lighting.ClockTime = originalLightingSettings.ClockTime
+    Lighting.FogStart = originalLightingSettings.FogStart
+    Lighting.FogEnd = originalLightingSettings.FogEnd
+    Lighting.FogColor = originalLightingSettings.FogColor
+end
+
+local connection
+local signals = {}
+
+local function disconnectSignals()
+    for _, conn in pairs(signals) do
+        conn:Disconnect()
+    end
+    signals = {}
+end
+
+tabVisual:CreateToggle({
+    Name = "Fullbright",
+    CurrentValue = false,
+    Flag = "ToggleFullbright",
+    Callback = function(state)
+        fullbrightEnabled = state
+        if fullbrightEnabled then
+            applyFullbright()
+
+            disconnectSignals()
+
+            table.insert(signals, Lighting:GetPropertyChangedSignal("Brightness"):Connect(function()
+                if fullbrightEnabled and Lighting.Brightness ~= currentBrightness then
+                    Lighting.Brightness = currentBrightness
+                end
+            end))
+            table.insert(signals, Lighting:GetPropertyChangedSignal("Ambient"):Connect(function()
+                if fullbrightEnabled and Lighting.Ambient ~= Color3.new(1,1,1) then
+                    Lighting.Ambient = Color3.new(1,1,1)
+                end
+            end))
+            table.insert(signals, Lighting:GetPropertyChangedSignal("OutdoorAmbient"):Connect(function()
+                if fullbrightEnabled and Lighting.OutdoorAmbient ~= Color3.new(1,1,1) then
+                    Lighting.OutdoorAmbient = Color3.new(1,1,1)
+                end
+            end))
+            table.insert(signals, Lighting:GetPropertyChangedSignal("FogStart"):Connect(function()
+                if fullbrightEnabled and Lighting.FogStart ~= 0 then
+                    Lighting.FogStart = 0
+                end
+            end))
+            table.insert(signals, Lighting:GetPropertyChangedSignal("FogEnd"):Connect(function()
+                if fullbrightEnabled and Lighting.FogEnd ~= 1e10 then
+                    Lighting.FogEnd = 1e10
+                end
+            end))
+            table.insert(signals, Lighting:GetPropertyChangedSignal("FogColor"):Connect(function()
+                if fullbrightEnabled and Lighting.FogColor ~= Color3.new(1,1,1) then
+                    Lighting.FogColor = Color3.new(1,1,1)
+                end
+            end))
+
+            if connection then connection:Disconnect() end
+            connection = RunService.RenderStepped:Connect(function()
+                applyFullbright()
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+            disconnectSignals()
+            restoreLighting()
+        end
+    end
+})
+
+tabVisual:CreateSlider({
+    Name = "Brightness",
+    Range = {0.1, 1.5},
+    Increment = 0.05,
+    Suffix = "",
+    CurrentValue = currentBrightness,
+    Flag = "BrightnessSlider",
+    Callback = function(value)
+        currentBrightness = value
+        if fullbrightEnabled then
+            applyFullbright()
+        end
+    end
+})
+
+
+
+tabVisual:CreateSection("NoFog")
+
+local originalFogSettings = {
+    FogStart = Lighting.FogStart,
+    FogEnd = Lighting.FogEnd,
+    ExposureCompensation = Lighting:FindFirstChild("ExposureCompensation") and Lighting.ExposureCompensation or 0
+}
+
+local storedAtmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+
+tabVisual:CreateToggle({
+    Name = "NoFog",
+    CurrentValue = false,
+    Flag = "ToggleNoFog",
+    Callback = function(state)
+        if state then
+            Lighting.FogStart = 0
+            Lighting.FogEnd = 1e10
+            Lighting.ExposureCompensation = 0.25
+
+            local atm = Lighting:FindFirstChildOfClass("Atmosphere")
+            if atm then
+                storedAtmosphere = atm:Clone()
+                atm:Destroy()
+            end
+        else
+            Lighting.FogStart = originalFogSettings.FogStart
+            Lighting.FogEnd = originalFogSettings.FogEnd
+            Lighting.ExposureCompensation = originalFogSettings.ExposureCompensation
+
+            if storedAtmosphere then
+                storedAtmosphere.Parent = Lighting
+            end
+        end
+    end
+})
+
+
+
+tabVisual:CreateSection("Time Cycle")
+
+local timeCycleEnabled = false
+local targetTime = Lighting.ClockTime
+local currentTime = Lighting.ClockTime
+local originalClockTime = Lighting.ClockTime
+local timeChangeSpeed = 5 -- часов в секунду
+local timeCycleConnection
+
+local function applyTime(time)
+    Lighting.ClockTime = time
+end
+
+local function restoreTime()
+    Lighting.ClockTime = originalClockTime
+end
+
+tabVisual:CreateToggle({
+    Name = "Enable Time Cycle",
+    CurrentValue = false,
+    Flag = "ToggleTimeCycle",
+    Callback = function(state)
+        timeCycleEnabled = state
+        if timeCycleEnabled then
+            if timeCycleConnection then
+                timeCycleConnection:Disconnect()
+                timeCycleConnection = nil
+            end
+
+            timeCycleConnection = RunService.RenderStepped:Connect(function(dt)
+                if math.abs(currentTime - targetTime) > 0.01 then
+                    if currentTime < targetTime then
+                        currentTime = math.min(currentTime + timeChangeSpeed * dt, targetTime)
+                    else
+                        currentTime = math.max(currentTime - timeChangeSpeed * dt, targetTime)
+                    end
+                    applyTime(currentTime)
+                else
+                    applyTime(targetTime)
+                end
+            end)
+        else
+            if timeCycleConnection then
+                timeCycleConnection:Disconnect()
+                timeCycleConnection = nil
+            end
+            restoreTime()
+        end
+    end
+})
+
+tabVisual:CreateSlider({
+    Name = "Time of Day",
+    Range = {0, 24},
+    Increment = 0.1,
+    Suffix = " h",
+    CurrentValue = Lighting.ClockTime,
+    Flag = "TimeOfDaySlider",
+    Callback = function(value)
+        targetTime = value
+        if not timeCycleEnabled then
+            currentTime = value
+            applyTime(value)
+        end
+    end
+})
+
+
+
+tabVisual:CreateSection("FOV")
+
+local customFOVEnabled = false
+local targetFOV = 90
+local fovSet = targetFOV
+
+local fovConnection
+local fovChangedConnection
+
+local function setFOVInstant()
+    if camera.FieldOfView ~= fovSet then
+        camera.FieldOfView = fovSet
+    end
+end
+
+local function onFOVChanged()
+    if customFOVEnabled and camera.FieldOfView ~= fovSet then
+        camera.FieldOfView = fovSet
+    end
+end
+
+local function startFOVLock()
+    if fovConnection then
+        fovConnection:Disconnect()
+        fovConnection = nil
+    end
+    if fovChangedConnection then
+        fovChangedConnection:Disconnect()
+    end
+
+    fovChangedConnection = camera:GetPropertyChangedSignal("FieldOfView"):Connect(onFOVChanged)
+    setFOVInstant()
+end
+
+local function stopFOVLock()
+    if fovChangedConnection then
+        fovChangedConnection:Disconnect()
+        fovChangedConnection = nil
+    end
+    camera.FieldOfView = 70
+end
+
+tabVisual:CreateToggle({
+    Name = "Custom FOV",
+    CurrentValue = false,
+    Flag = "ToggleCustomFOV",
+    Callback = function(state)
+        customFOVEnabled = state
+        if state then
+            fovSet = targetFOV
+            startFOVLock()
+        else
+            stopFOVLock()
+        end
+    end
+})
+
+tabVisual:CreateSlider({
+    Name = "FOV",
+    Range = {70, 120},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 90,
+    Flag = "FOVSlider",
+    Callback = function(value)
+        targetFOV = value
+        if customFOVEnabled then
+            fovSet = value
+            setFOVInstant()
+        end
+    end
+})
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local TabMisc = Window:CreateTab("Misc")
+TabMisc:CreateSection("NoRecoil")
+
+local recoilConnection
+local savedRecoil -- клонированный объект Recoil
+local savedValues = {} -- таблица для хранения значений всех вложенных объектов
+
+-- Сохраняем значения вложенных Value-объектов
+local function saveRecoilValues(recoil)
+    savedValues = {}
+    for _, child in ipairs(recoil:GetDescendants()) do
+        if child:IsA("ValueBase") then
+            savedValues[child.Name] = child.Value
+        end
+    end
+end
+
+local function deleteRecoil()
+    local recoil = LocalPlayer:FindFirstChild("Recoil")
+    if recoil then
+        saveRecoilValues(recoil)
+        savedRecoil = recoil:Clone()
+        recoil:Destroy()
+    end
+end
+
+local function restoreRecoil()
+    if not LocalPlayer:FindFirstChild("Recoil") and savedRecoil then
+        local clone = savedRecoil:Clone()
+        clone.Parent = LocalPlayer
+
+        -- Восстанавливаем значения
+        for _, child in ipairs(clone:GetDescendants()) do
+            if child:IsA("ValueBase") then
+                local saved = savedValues[child.Name]
+                if saved ~= nil then
+                    child.Value = saved
+                end
+            end
+        end
+    end
+end
+
+TabMisc:CreateToggle({
+    Name = "NoRecoil",
+    CurrentValue = false,
+    Flag = "ToggleNoRecoil",
+    Callback = function(state)
+        if state then
+            deleteRecoil()
+            recoilConnection = LocalPlayer.ChildAdded:Connect(function(child)
+                if child.Name == "Recoil" then
+                    wait()
+                    child:Destroy()
+                end
+            end)
+        else
+            if recoilConnection then
+                recoilConnection:Disconnect()
+                recoilConnection = nil
+            end
+            restoreRecoil()
+        end
+    end
+})
+
+TabMisc:CreateSection("NoSlow")
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local weightCache = {}
+local connections = {}
+local noSlowEnabled = false
+
+-- Сохраняет оригинальный вес и обнуляет
+local function zeroWeight(tool)
+    if not tool:IsA("Tool") then return end
+    local weight = tool:FindFirstChild("Weight")
+    if weight and weight:IsA("NumberValue") then
+        if weightCache[tool] == nil then
+            weightCache[tool] = weight.Value
+        end
+        weight.Value = 0
+    end
+end
+
+-- Восстанавливает сохранённый вес
+local function restoreWeight(tool)
+    local weight = tool:FindFirstChild("Weight")
+    if weight and weight:IsA("NumberValue") and weightCache[tool] then
+        weight.Value = weightCache[tool]
+    end
+end
+
+-- Обрабатывает все тулзы в контейнере (Backpack или Character)
+local function handleTools(container)
+    for _, tool in ipairs(container:GetChildren()) do
+        if tool:IsA("Tool") then
+            zeroWeight(tool)
+        end
+    end
+end
+
+-- Подписка на добавление тулзов
+local function setupToolWatcher(container)
+    local conn = container.ChildAdded:Connect(function(child)
+        if noSlowEnabled and child:IsA("Tool") then
+            zeroWeight(child)
+        end
+    end)
+    table.insert(connections, conn)
+end
+
+-- Запуск NoSlow
+local function enableNoSlow()
+    noSlowEnabled = true
+
+    weightCache = {} -- очищаем кеш
+
+    handleTools(LocalPlayer.Backpack)
+    handleTools(LocalPlayer.Character or {})
+
+    setupToolWatcher(LocalPlayer.Backpack)
+    if LocalPlayer.Character then
+        setupToolWatcher(LocalPlayer.Character)
+    end
+
+    -- При респавне игрока заново подключаемся
+    local respawnConn = LocalPlayer.CharacterAdded:Connect(function(char)
+        wait(0.5)
+        handleTools(char)
+        setupToolWatcher(char)
+    end)
+    table.insert(connections, respawnConn)
+end
+
+-- Отключение NoSlow и восстановление весов
+local function disableNoSlow()
+    noSlowEnabled = false
+
+    -- Восстановим все веса
+    for tool, originalWeight in pairs(weightCache) do
+        restoreWeight(tool)
+    end
+
+    -- Отключим все коннекты
+    for _, conn in ipairs(connections) do
+        if conn.Connected then
+            conn:Disconnect()
+        end
+    end
+    connections = {}
+    weightCache = {}
+end
+
+-- Включение UI Toggle (пример)
+TabMisc:CreateToggle({
+    Name = "NoSlow",
+    CurrentValue = false,
+    Flag = "ToggleNoSlow",
+    Callback = function(state)
+        if state then
+            enableNoSlow()
+        else
+            disableNoSlow()
+        end
+    end
+})
+
+TabMisc:CreateSection("Hitbox Expander")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local headExpanderEnabled = false
+local headSize = 2 -- начальный размер головы (множитель)
+
+-- Увеличиваем голову игрока
+local function scaleHead(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if head and head:IsA("BasePart") then
+        head.Size = Vector3.new(1, 1, 1) * headSize
+        head.CanCollide = false
+        head.Transparency = 0 -- оставляем голову видимой
+    end
+end
+
+-- Сбрасываем голову игрока к стандарту
+local function resetHead(player)
+    if player == LocalPlayer then return end
+    local char = player.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if head and head:IsA("BasePart") then
+        head.Size = Vector3.new(1, 1, 1)
+        head.CanCollide = true
+        head.Transparency = 0
+    end
+end
+
+-- Обновляем голову игрока в зависимости от состояния
+local function updatePlayerHead(player)
+    if headExpanderEnabled then
+        scaleHead(player)
+    else
+        resetHead(player)
+    end
+end
+
+-- Обновляем головы всех игроков
+local function updateAllHeads()
+    for _, player in pairs(Players:GetPlayers()) do
+        updatePlayerHead(player)
+    end
+end
+
+-- Слушатель для новых персонажей
+local function setupCharacterListener(player)
+    player.CharacterAdded:Connect(function()
+        task.wait(1) -- ждем загрузки головы
+        updatePlayerHead(player)
+    end)
+end
+
+-- Подключаем слушатели и обновляем для всех текущих игроков
+for _, player in pairs(Players:GetPlayers()) do
+    setupCharacterListener(player)
+    updatePlayerHead(player)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    setupCharacterListener(player)
+end)
+
+-- UI переключатель для включения/выключения
+TabMisc:CreateToggle({
+    Name = "Head Expander",
+    CurrentValue = false,
+    Flag = "ToggleHeadExpander",
+    Callback = function(state)
+        headExpanderEnabled = state
+        updateAllHeads()
+    end
+})
+
+-- UI слайдер для изменения размера головы
+TabMisc:CreateSlider({
+    Name = "Head Size",
+    Range = {1, 6},
+    Increment = 0.1,
+    Suffix = "x",
+    CurrentValue = headSize,
+    Flag = "HeadSizeSlider",
+    Callback = function(value)
+        headSize = value
+        if headExpanderEnabled then
+            updateAllHeads()
+        end
+    end
+})
+
+TabMisc:CreateSection("Noclip Camera")
+
+local noclipCamEnabled = false
+
+local function toggleNoclipCam()
+    local debug = debug or getfenv(0).debug
+    local sc = (debug and debug.setconstant) or setconstant
+    local gc = (debug and debug.getconstants) or getconstants
+    local getgc = getgc
+
+    if not sc or not getgc or not gc then
+        print('Your exploit does not support this command (missing setconstant or getconstants or getgc)')
+        return
+    end
+
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local pop = LocalPlayer.PlayerScripts.PlayerModule.CameraModule.ZoomController.Popper
+
+    for _, v in pairs(getgc()) do
+        if type(v) == 'function' and getfenv(v).script == pop then
+            for i, v1 in pairs(gc(v)) do
+                if tonumber(v1) == 0.25 then
+                    sc(v, i, noclipCamEnabled and 0 or 0.25)
+                elseif tonumber(v1) == 0 then
+                    sc(v, i, noclipCamEnabled and 0.25 or 0)
+                end
+            end
+        end
+    end
+end
+
+-- Переключатель
+TabMisc:CreateToggle({
+    Name = "Noclip Camera",
+    CurrentValue = false,
+    Flag = "ToggleNoclipCam",
+    Callback = function(state)
+        noclipCamEnabled = state
+        toggleNoclipCam()
+    end
+})
+
+TabMisc:CreateSection("СFrameFly")
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local flying = false
+local CFspeed = 50
+local CFloop = nil
+
+local function startCFrameFly()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local head = character:FindFirstChild("Head")
+    if not humanoid or not head then return end
+
+    humanoid.PlatformStand = true
+    head.Anchored = true
+
+    CFloop = RunService.Heartbeat:Connect(function(deltaTime)
+        local moveDirection = humanoid.MoveDirection * (CFspeed * deltaTime)
+        local headCFrame = head.CFrame
+        local cameraCFrame = workspace.CurrentCamera.CFrame
+        local cameraOffset = headCFrame:ToObjectSpace(cameraCFrame).Position
+        cameraCFrame = cameraCFrame * CFrame.new(-cameraOffset.X, -cameraOffset.Y, -cameraOffset.Z + 1)
+        local cameraPosition = cameraCFrame.Position
+        local headPosition = headCFrame.Position
+
+        local objectSpaceVelocity = CFrame.new(cameraPosition, Vector3.new(headPosition.X, cameraPosition.Y, headPosition.Z)):VectorToObjectSpace(moveDirection)
+        head.CFrame = CFrame.new(headPosition) * (cameraCFrame - cameraPosition) * CFrame.new(objectSpaceVelocity)
+    end)
+end
+
+local function stopCFrameFly()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local head = character:FindFirstChild("Head")
+    if CFloop then
+        CFloop:Disconnect()
+        CFloop = nil
+    end
+    if humanoid then
+        humanoid.PlatformStand = false
+    end
+    if head then
+        head.Anchored = false
+    end
+end
+
+local function toggleCFrameFly()
+    flying = not flying
+    if flying then
+        startCFrameFly()
+    else
+        stopCFrameFly()
+    end
+end
+
+-- Ползунок скорости
+TabMisc:CreateSlider({
+    Name = "Fly Speed",
+    Range = {1, 200},
+    Increment = 1,
+    Suffix = " studs/s",
+    CurrentValue = CFspeed,
+    Flag = "FlySpeed",
+    Callback = function(value)
+        CFspeed = value
+    end
+})
+
+-- Кейбинд для включения/выключения полёта
+TabMisc:CreateKeybind({
+    Name = "Toggle Fly (Keybind)",
+    CurrentKeybind = "",  -- пустой изначально
+    HoldToInteract = false,
+    Flag = "FlyBind",
+    Callback = function()
+        toggleCFrameFly()
+    end
+})
+
+Rayfield:Notify({
+   Title = "NNNEWT HUB",
+   Content = "ESP Loaded",
+   Duration = 5,
+   Image = 4483362458,
+})
+Rayfield:LoadConfiguration()
